@@ -350,12 +350,16 @@ class Subject(metaclass=ExceptionHandlingMeta):
             raise FileNotFoundError('All trials failed to load.')
 
     def load_folder(self, subject_folder: str, data_folder_path: str):
+        print("got here")
         # This is just a convenience wrapper to load a subject folder in a standard format.
         if not subject_folder.endswith('/'):
             subject_folder += '/'
         self.load_subject_json(subject_folder + '_subject.json')
+        print("Loaded in subject")
         self.load_model_files(subject_folder, data_folder_path)
+        print("Loaded in model")
         self.load_trials(subject_folder + 'trials/')
+        print("All trials have been loaded")
 
     ###################################################################################################################
     # Processing the Subject
@@ -415,7 +419,7 @@ class Subject(metaclass=ExceptionHandlingMeta):
                 if not trial.error:
                     # Ablation #1: Remove the right force plate
                     # trial.zero_force_plate(0)
-                    trial.split_segments(max_grf_gap_fill_size=1.0, max_segment_frames=2000)
+                    trial.split_segments(max_grf_gap_fill_size=1.0, max_segment_frames=3000)
         except Exception as e:
             print('Error segmenting trials:', e, flush=True)
             print(traceback.format_exc(), flush=True)

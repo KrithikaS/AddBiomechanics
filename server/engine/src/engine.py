@@ -222,9 +222,9 @@ class Engine(metaclass=ExceptionHandlingMeta):
             self.run_dynamics_fitting()
             self.run_write_openim()
             self.run_moco()
-            self.run_zip_opensim()
+            # self.run_zip_opensim()  # Disabled: skip writing .zip file
             self.run_write_web()
-            self.run_write_b3d()
+            # self.run_write_b3d()  # Disabled: skip writing .b3d file
 
         except Error as e:
             # If we failed, write a JSON file with the error information.

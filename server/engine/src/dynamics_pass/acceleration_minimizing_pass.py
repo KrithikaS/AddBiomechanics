@@ -55,6 +55,19 @@ def add_acceleration_minimizing_pass(subject: nimble.biomechanics.SubjectOnDisk)
         print('Minimizing acceleration on trial ' + str(i))
 
         trial_len = subject.getTrialLength(i)
+        
+        # Skip trials with fewer than 3 frames (AccelerationMinimizer requires at least 3 timesteps)
+        if trial_len < 3:
+            print('Skipping trial ' + str(i) + ' because it has only ' + str(trial_len) + ' frames (minimum 3 required)')
+            # Create an empty pass for this trial to maintain consistency
+            acc_min_pass_proto = trial_proto.addPass()
+            acc_min_pass_proto.setType(nimble.biomechanics.ProcessingPassType.ACC_MINIMIZING_FILTER)
+            acc_min_pass_proto.setDofPositionsObserved([False for _ in range(num_dofs)])
+            acc_min_pass_proto.setDofVelocitiesFiniteDifferenced([False for _ in range(num_dofs)])
+            acc_min_pass_proto.setDofAccelerationFiniteDifferenced([False for _ in range(num_dofs)])
+            trial_lowpass_force_plates.append([])
+            continue
+        
         dt = subject.getTrialTimestep(i)
         pose_regularization = 1000.0
         acceleration_minimizer = nimble.utils.AccelerationMinimizer(trial_len, 1.0 / (dt * dt), pose_regularization)

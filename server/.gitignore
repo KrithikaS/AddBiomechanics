@@ -2,3 +2,8 @@ env
 .aws/credentials
 server_credentials.csv
 .DS_Store
+
+server/addbio_containers/opencap_data_folder/
+server/addbio_containers/mocap_data_folder/
+server/addbio_containers/opencap_test_default/
+server/addbio_containers/

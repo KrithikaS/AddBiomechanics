@@ -6,4 +6,4 @@ server_credentials.csv
 addbio_containers/opencap_data_folder/
 addbio_containers/mocap_data_folder/
 addbio_containers/opencap_test_default/
-addbio_containers/
+addbio_containers/opencap_test/

@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+FROM kswami235/addbio_base
+
+# Install PyTorch
+RUN pip3 install torch
+
+# Install requirements
+COPY ./engine /engine
+COPY ./data /data
+RUN pip3 install -r /engine/requirements.txt

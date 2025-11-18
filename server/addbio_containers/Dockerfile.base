@@ -1,0 +1,88 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:22.04
+
+# Install base packages
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        build-essential \
+        python3 \
+        python3-pip \
+        python3-dev \
+        python3-numpy \
+        python3-setuptools \
+        zip \
+        git \
+        curl \
+        cmake \
+        libopenblas-dev \
+        liblapack-dev \
+        wget \
+        pkgconf \
+        gfortran \
+        autoconf \
+        libtool \
+        libpcre2-dev \
+        libpcre2-dev \
+        ffmpeg \
+        libsm6 \
+        libxext6 \
+        byacc && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install SWIG
+RUN wget -nc -q --show-progress https://github.com/swig/swig/archive/refs/tags/v4.1.1.tar.gz && \
+    tar -xzf v4.1.1.tar.gz && \
+    cd swig-4.1.1 && \
+    ./autogen.sh && \
+    ./configure --prefix=$HOME/swig --disable-ccache && \
+    make -j8 && \
+    make install && \
+    cd .. && \
+    rm -rf swig-4.1.1 v4.1.1.tar.gz
+
+# Install OpenSim dependencies
+RUN git clone https://github.com/opensim-org/opensim-core.git
+RUN mkdir opensim_dependencies_build && \
+    cd opensim_dependencies_build && \
+    cmake ../opensim-core/dependencies \
+        -DCMAKE_INSTALL_PREFIX="~/opensim_dependencies_install" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DOPENSIM_WITH_CASADI=ON \
+        -DCMAKE_C_FLAGS="-Wno-misleading-indentation" \
+        -DCMAKE_CXX_FLAGS="-Wno-misleading-indentation" && \
+    cmake . -LAH && \
+    { make -j4 --output-sync=recurse || make -j1; }
+
+# Install OpenSim
+RUN mkdir opensim_build && \
+    cd opensim_build && \
+    cmake ../opensim-core \
+        -DCMAKE_INSTALL_PREFIX="~/opensim_install" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DOPENSIM_WITH_CASADI=ON \
+        -DBUILD_PYTHON_WRAPPING=ON \
+        -DBUILD_JAVA_WRAPPING=OFF \
+        -DBUILD_TESTING=OFF \
+        -DOPENSIM_DEPENDENCIES_DIR="~/opensim_dependencies_install" \
+        -DOPENSIM_INSTALL_UNIX_FHS=OFF \
+        -DSWIG_DIR="~/swig/share/swig" \
+        -DSWIG_EXECUTABLE="~/swig/bin/swig" \
+        -DWITH_BTK=ON \
+        -DCMAKE_C_FLAGS="-Wno-misleading-indentation" \
+        -DCMAKE_CXX_FLAGS="-Wno-misleading-indentation" && \
+    cmake . -LAH && \
+    { make -j4 --output-sync=recurse || make -j1; } && \
+    cmake --install .
+
+# Install OpenSim Python interface
+RUN cd ~/opensim_install/sdk/Python && \
+    python3 setup.py install
+ENV LD_LIBRARY_PATH="/root/opensim_dependencies_install/simbody/lib"
+
+# Test our installation
+RUN cd ~/opensim_install/bin && \
+    sed -i 's/sudo -k//g' ./opensim-install-command-line.sh && \
+    sed -i 's/sudo //g' ./opensim-install-command-line.sh && \
+    cat ./opensim-install-command-line.sh && \
+    ./opensim-install-command-line.sh
+RUN LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opensim_dependencies_install/ipopt/lib" opensim-cmd
